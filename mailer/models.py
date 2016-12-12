@@ -4,6 +4,7 @@ import base64
 import logging
 import pickle
 import datetime
+import itertools
 
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.timezone import now as datetime_now
@@ -111,6 +112,9 @@ class Message(models.Model):
     message_data = models.TextField()
     when_added = models.DateTimeField(default=datetime_now)
     priority = models.CharField(max_length=1, choices=PRIORITIES, default=PRIORITY_MEDIUM)
+    to_address = models.CharField(max_length=255, default='-')
+    title = models.CharField(max_length=255, default='-')
+
     # @@@ campaign?
     # @@@ content_type?
 
@@ -204,7 +208,10 @@ def make_message(subject="", body="", from_email=None, to=None, bcc=None,
         attachments=attachments,
         headers=headers
     )
-    db_msg = Message(priority=priority)
+    bcc = bcc or []
+    to = to or []
+    to_address = ','.join(email for email in itertools.chain(bcc, to))
+    db_msg = Message(priority=priority, title=subject, to_address=to_address)
     db_msg.email = core_msg
     return db_msg
 
@@ -260,6 +267,8 @@ class MessageLogManager(models.Manager):
             # @@@ other fields from Message
             result=result_code,
             log_message=log_message,
+            to_address=message.to_address,
+            title=message.title,
         )
 
     def purge_old_entries(self, days):
@@ -284,6 +293,9 @@ class MessageLog(models.Model):
     when_attempted = models.DateTimeField(default=datetime_now)
     result = models.CharField(max_length=1, choices=RESULT_CODES)
     log_message = models.TextField()
+
+    to_address = models.CharField(max_length=255, default='-')
+    title = models.CharField(max_length=255, default='-')
 
     objects = MessageLogManager()
 
