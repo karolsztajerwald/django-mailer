@@ -48,6 +48,14 @@ class MessageLogAdmin(MessageAdminMixin, admin.ModelAdmin):
     readonly_fields = ['plain_text_body', 'message_id']
     search_fields = ['message_id']
     actions = ['show_message_data']
+    fieldsets = (
+        (None, {
+            'fields': (
+                'message_data', 'when_added', 'priority', 'when_attempted', "result",
+                'log_message', "to_address", "title", "message_id",
+            )
+        }),
+    )
 
     def show_message_data(self, request, queryset):
         data = ''
@@ -58,9 +66,9 @@ class MessageLogAdmin(MessageAdminMixin, admin.ModelAdmin):
 
     def get_urls(self):
         urls = super(MessageLogAdmin, self).get_urls()
-        my_urls = patterns('',
+        my_urls = [
             url(r'^show_message_data/(?P<message_id>\d+)/$', self.message_data, name="show_message_data")
-        )
+        ]
         return my_urls + urls
 
     def message_data(self, request, message_id):
@@ -71,4 +79,3 @@ class MessageLogAdmin(MessageAdminMixin, admin.ModelAdmin):
 admin.site.register(Message, MessageAdmin)
 admin.site.register(DontSendEntry, DontSendEntryAdmin)
 admin.site.register(MessageLog, MessageLogAdmin)
-
